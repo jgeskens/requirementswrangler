@@ -19,6 +19,7 @@ if __name__ == '__main__':
     req_file = codecs.open(req_filename, 'rt', encoding='utf-8')
     packages = sys.argv[2:]
     new_lines = []
+    changed = False
     for line in req_file.readlines():
         new_line = line
         for package in packages:
@@ -38,16 +39,18 @@ if __name__ == '__main__':
                             print '->', new_version
                             new_line = new_line.replace('@%s#egg=' % current_version,
                                                         '@%s#egg=' % new_version)
+                            changed = True
                         else:
                             print '[up to date]'
                     else:
                         print '[not found in pip freeze]'
         new_lines.append(new_line)
     req_file.close()
-    req_file = codecs.open(req_filename, 'wt', encoding='utf-8')
-    req_file.writelines(new_lines)
-    req_file.close()
 
-
-
-
+    if changed:
+        req_file = codecs.open(req_filename, 'wt', encoding='utf-8')
+        req_file.writelines(new_lines)
+        req_file.close()
+        print u'Wrote changes to %s.' % req_filename
+    else:
+        print u'Left %s untouched.' % req_filename

@@ -9,6 +9,24 @@ import subprocess
 __author__ = 'Jef Geskens'
 
 
+class Freezer:
+    frozen = None
+
+    def get_frozen_packages(self):
+        if not self.frozen:
+            self.frozen = subprocess.check_output(('pip', 'freeze'))
+        return self.frozen
+
+    def find_frozen_package_version(self, package):
+        frozen = self.get_frozen_packages()
+        found = [l for l in frozen.splitlines() if ('#egg=%s' % package) in l]
+        if found:
+            version_match = re.findall(r'.*@(\S+)#egg=.*', found[0])
+            if version_match:
+                return version_match[0][:7]
+        return None
+
+
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         print('Usage: python rw.py path/to/requirements.txt [app1 [app2 ...]]')
@@ -20,6 +38,7 @@ if __name__ == '__main__':
     packages = sys.argv[2:]
     new_lines = []
     changed = False
+    freezer = Freezer()
     for line in req_file.readlines():
         new_line = line
         for package in packages:
@@ -29,12 +48,8 @@ if __name__ == '__main__':
                     current_version = match[0]
                     print package, current_version,
 
-                    p1 = subprocess.Popen('pip freeze'.split(), stdout=subprocess.PIPE)
-                    p2 = subprocess.Popen(('grep', package), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-                    frozen = p2.communicate(p1.communicate()[0])[0]
-                    frozen_match = re.findall(r'.*@(\S+)#egg=.*', frozen)
-                    if frozen_match:
-                        new_version = frozen_match[0][:7]
+                    new_version = freezer.find_frozen_package_version(package)
+                    if new_version:
                         if new_version != current_version:
                             print '->', new_version
                             new_line = new_line.replace('@%s#egg=' % current_version,

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys
 import codecs
 import re
@@ -31,7 +33,7 @@ if __name__ == '__main__':
                     frozen = p2.communicate(p1.communicate()[0])[0]
                     frozen_match = re.findall(r'.*@(\S+)#egg=.*', frozen)
                     if frozen_match:
-                        new_version = frozen_match[0][:8]
+                        new_version = frozen_match[0][:7]
                         if new_version != current_version:
                             print '->', new_version
                             new_line = new_line.replace('@%s#egg=' % current_version,
